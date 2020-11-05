@@ -171,6 +171,8 @@ class zcl_falv definition
     data error_log_height type i value 100 ##NO_TEXT.
     data grid type ref to cl_gui_alv_grid .
     data built_in_screen type abap_bool  read-only.
+    data: buffering_active type abap_bool value abap_true,
+          bypassing_buffer type abap_bool value abap_false.
 
     class-methods create
       importing
@@ -1244,8 +1246,8 @@ class zcl_falv implementation.
       assign outtab->* to <outtab>.
       me->set_table_for_first_display(
         exporting
-*            i_buffer_active               =     " Buffering Active
-*            i_bypassing_buffer            =     " Switch Off Buffer
+             i_buffer_active               =  buffering_active   " Buffering Active
+             i_bypassing_buffer            =  bypassing_buffer   " Switch Off Buffer
 *            i_consistency_check           =     " Starting Consistency Check for Interface Error Recognition
 *            i_structure_name              =     " Internal Output Table Structure Name
           is_variant                     =     variant
@@ -1604,6 +1606,12 @@ class zcl_falv implementation.
         leave to screen 0.
       when fc_mass_replace.
         mass_replace( ).
+      when fc_find.
+        e_ucomm = '%SC'.
+        set_function_code( CHANGING c_ucomm = e_ucomm ).
+      when fc_find_next.
+        e_ucomm = '%SC+'.
+        set_function_code( CHANGING c_ucomm = e_ucomm ).
     endcase.
   endmethod.
 
@@ -2551,6 +2559,7 @@ class zcl_falv implementation.
     i_falv->m_batch_mode = me->m_batch_mode.
     i_falv->layout->delete_all_buttons = me->layout->delete_all_buttons.
     i_falv->layout->mark_field = me->layout->mark_field.
+    i_falv->register_f4_for_fields( it_f4 = me->grid->mt_f4 ).
   endmethod.
 
   method get_columns.
